@@ -179,7 +179,7 @@ def plot_repavg_protein_grid(dataset, plotspecs):
 def plot_data(dataset, plotspecs, err_mult=1.):
     """Plot values versus frustration"""
 
-    if plotspecs.has_key("newfig"):
+    if plotspecs["newfig"]:
         fig = plt.figure()
     else:
         fig = plt.gcf()
