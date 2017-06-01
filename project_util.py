@@ -107,8 +107,8 @@ class Dataset(object):
                         data_name_avg.append(np.nan)
                         data_name_std.append(np.nan)
 
-                data_top_avg.append(data_name_avg)
-                data_top_std.append(data_name_std)
+                data_top_avg.append(np.array(data_name_avg))
+                data_top_std.append(np.array(data_name_std))
 
             all_data_avg.append(data_top_avg)
             all_data_std.append(data_top_std)
