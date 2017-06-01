@@ -67,6 +67,8 @@ if __name__ == "__main__":
                     temp_std.append(np.nan)
             Tg_over_Tf_data.stddata[t][n] = np.array(temp_std)
 
+
+
     project_plotter.plot_data(Tf_data, Tf_plotspecs, err_mult=1.96)
     project_plotter.plot_data(Tg_data, Tg_plotspecs, err_mult=1.96)
     project_plotter.plot_data(Tg_over_Tf_data, Tg_over_Tf_plotspecs, err_mult=1.96)
