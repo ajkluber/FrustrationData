@@ -19,26 +19,25 @@ if __name__ == "__main__":
 
     plotstyle = project_plotter.global_plot_style()
 
-    coordname = "Qtanh_0_05"
-    datapath = coordname + "_transit_time/forward_mean"
-
-    tp_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":"$t_{tp}$ (frames)", 
-            "legend_loc":6,
-            "saveas":"repavg_tp_1D", "saveas_formats":["png","pdf"]}
+    tp_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$t_{tp}$ (frames)", 
+            "legend_loc":2, "ylims":(0,420),
+            "saveas":"repavg_tp_1D"}
     tp_plotspecs.update(plotstyle)
 
-    tp_norm_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":"$t_{tp}$ (frames)", 
-            "legend_loc":4,
-            "saveas":"repavg_tp_norm_1D", "saveas_formats":["png","pdf"]}
+    tp_norm_plotspecs = {"xlabel":"Frustration ($b$)", 
+            "ylabel":r"$\frac{t_{tp}}{t_{tp}^{b=0}}$",
+            "legend_loc":2,
+            "saveas":"repavg_tp_norm_1D"}
     tp_norm_plotspecs.update(plotstyle)
 
-    tp_ylog_norm_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":"$t_{tp}$ (frames)", 
-            "legend_loc":4,
-            "saveas":"repavg_tp_ylog_norm_1D", "saveas_formats":["png","pdf"]}
+    tp_ylog_norm_plotspecs = {"xlabel":"Frustration ($b$)", 
+            "ylabel":r"$\log\frac{t_{tp}}{t^{b=0}_{tp}}$", 
+            "legend_loc":2,
+            "saveas":"repavg_tp_ylog_norm_1D"}
     tp_ylog_norm_plotspecs.update(plotstyle)
 
     # gather data
-    tp_data = project_util.Dataset(topologies, top_names, b_values, replicas, datapath)
+    tp_data = project_util.Dataset(topologies, top_names, b_values, replicas, "Qtanh_0_05_transit_time/forward_mean")
 
     # normalize data 
     tp_norm_data = project_util.Dataset(topologies, top_names, b_values, replicas, "", empty=True)
@@ -51,6 +50,7 @@ if __name__ == "__main__":
                 for rep in range(len(tp_b)):
                     if not np.isnan(tp_b[rep]):
                         tp_norm_data.data[t][n][b][rep] = tp_b[rep]/avg_tp_0
+    tp_norm_data._calc_repavg()
 
     tp_ylog_norm_data = project_util.Dataset(topologies, top_names, b_values, replicas, "", empty=True)
     for t in range(len(topologies)):
@@ -63,8 +63,6 @@ if __name__ == "__main__":
                     if not np.isnan(tp_b[rep]):
                         tp_ylog_norm_data.data[t][n][b][rep] = np.log(tp_b[rep]/avg_tp_0)
     tp_ylog_norm_data._calc_repavg()
-
-
 
     # plot data
     project_plotter.plot_data(tp_ylog_norm_data, tp_ylog_norm_plotspecs)

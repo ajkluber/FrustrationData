@@ -76,37 +76,37 @@ if __name__ == "__main__":
             "saveas":"repavg_mfpt_1D", "saveas_formats":["png","pdf"]}
     mfpt_plotspecs.update(plotstyle)
 
-    mfpt_ylog_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":"$\\log\\frac{t_{mfpt}}{t_{unit}}$",
+    mfpt_ylog_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$\log\frac{t_{mfpt}}{t_{unit}}$",
             "title":"MFPT along Q", "legend_loc":6, "ylims":(5.5,10), 
             "saveas":"repavg_mfpt_1D_ylog", "saveas_formats":["png","pdf"]}
     mfpt_ylog_plotspecs.update(plotstyle)
 
-    mfpt_ylog_norm_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":"$\\log\\frac{t_{mfpt}}{t^{b=0}_{mfpt}}$", 
+    mfpt_ylog_norm_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$\log\frac{t_{mfpt}}{t^{b=0}_{mfpt}}$", 
             "title":"MFPT along Q", "legend_loc":2,
             "saveas":"repavg_mfpt_1D_ylog_norm", "saveas_formats":["png","pdf"]}
     mfpt_ylog_norm_plotspecs.update(plotstyle)
 
-    mfpt_norm_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":"$t_{mfpt}$ / $t_{mfpt}^{b=0}$", 
+    mfpt_norm_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$t_{mfpt}$ / $t_{mfpt}^{b=0}$", 
             "title":"MFPT along Q", "legend_loc":6, "ylims":(0, 5),
             "saveas":"repavg_mfpt_1D_norm", "saveas_formats":["png","pdf"]}
     mfpt_norm_plotspecs.update(plotstyle)
 
-    dFstab_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":"$\\Delta F^{\\circ}$ $(k_B T)$", 
+    dFstab_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$\Delta F^{\circ}$ $(k_B T)$", 
             "title":"Stability", "legend_loc":3,
             "saveas":"repavg_dFstab_1D", "saveas_formats":["png","pdf"]}
     dFstab_plotspecs.update(plotstyle)
 
-    dFdagg_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":"$\\Delta F^{\\dagger}$ $(k_B T)$", 
+    dFdagg_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$\Delta F^{\dagger}$ $(k_B T)$", 
             "title":"Barrier height", "legend_loc":3, "ylims":(0,5),
             "saveas":"repavg_dFdagg_1D", "saveas_formats":["png","pdf"]}
     dFdagg_plotspecs.update(plotstyle)
 
-    prefactor_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":"$t_0$ (frames)", 
+    prefactor_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$t_0$ (frames)", 
             "title":"Folding prefactor","legend_loc":2, "ylims":(0, 900),
             "saveas":"repavg_prefactor_1D", "saveas_formats":["png","pdf"]}
     prefactor_plotspecs.update(plotstyle)
 
-    prefactor_norm_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":"$t_0$ / $t_0^{b=0}$", 
+    prefactor_norm_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$t_0$ / $t_0^{b=0}$", 
             "title":"Folding prefactor", "legend_loc":2, "ylims":(0, 5),
             "saveas":"repavg_prefactor_1D_norm", "saveas_formats":["png","pdf"]}
     prefactor_norm_plotspecs.update(plotstyle)

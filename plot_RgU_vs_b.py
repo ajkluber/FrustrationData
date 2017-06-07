@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
 
     Rgmin_over_Rg_plotspecs = {"xlabel":"Frustration ($b$)", 
-            "ylabel":r"$\frac{R_g^{min}}{R_g}$", "ylims":(0.3, 1),
+            "ylabel":r"$\frac{R_g^{min}}{R_g}$", "ylims":(0.3, 1), 
             "title":" ", "legend_loc":4, "saveas":"Rgmin_over_Rg_vs_b"}
     Rgmin_over_Rg_plotspecs.update(plotstyle)
 
@@ -151,9 +151,9 @@ if __name__ == "__main__":
                     temp_std.append(np.nan)
             Rgmin_over_Rg.stddata[t][n] = np.array(temp_std)
 
-    project_plotter.plot_data(Rg_data, Rg_plotspecs)
+    #project_plotter.plot_data(Rg_data, Rg_plotspecs)
     #project_plotter.plot_data(Rg_norm_data, Rg_norm_plotspecs)
-    project_plotter.plot_data(Rgmin_over_Rg, Rgmin_over_Rg_plotspecs, err_mult=1.95)
+    project_plotter.plot_data(Rgmin_over_Rg, Rgmin_over_Rg_plotspecs)
     plt.show()
 
     project_util.save_avg_plot_data(Rg_data, "Rg_raw")
