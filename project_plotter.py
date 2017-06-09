@@ -220,7 +220,7 @@ def plot_data(dataset, plotspecs, err_mult=1.):
                         first = False
                     else:
                         pass
-
+            
             b_line = np.array(b_line)
             avg_val_line = np.array(avg_val_line)
             std_dev_line = np.array(std_dev_line)
@@ -246,6 +246,7 @@ def plot_data(dataset, plotspecs, err_mult=1.):
             plt.legend(fontsize=18)
 
     #plt.text(-0.26, 0.68, plotspecs["ylabel"], fontsize=28) # use for y-label of Rg_packing plot
+    #plt.text(-0.26, 0.53, plotspecs["ylabel"], fontsize=30) # use for y-label of packing plot
     plt.ylabel(plotspecs["ylabel"])
     plt.xlabel(plotspecs["xlabel"])
     if plotspecs.has_key("title"):
@@ -329,21 +330,17 @@ def plot_replica_maps_grid(dataset, plotspecs):
                     for rep in range(len(dataset.ydata[t][n][j])):
                         ax = axes[rep / grid_dims[0], rep % grid_dims[0]]
 
-                        vals = dataset.ydata[t][n][j][rep]
-                        Cnat = np.zeros((N, N))
-                        Cnon = np.zeros((N, N))
+                        vals = dataset.ydata[t][n][j][0]
+                        C = np.zeros((N, N))
                         for m in range(len(pairs)):
                             if m < dataset.prot_n_native[t][n]:
-                                Cnat[pairs[m, 1], pairs[m, 0]] = vals[m]
+                                C[pairs[m, 1], pairs[m, 0]] = vals[m]
                             else:
-                                Cnon[pairs[m, 1], pairs[m, 0]] = vals[m]
-                        
-                        # plot native and non-native contacts in different colors
-                        vmin, vmax = plotspecs["vminmax"][0]
-                        ax.pcolormesh(np.ma.array(Cnat, mask=Cnat == 0), cmap="Blues", vmin=vmin, vmax=vmax)
+                                C[pairs[m, 1], pairs[m, 0]] = -vals[m]
 
-                        vmin, vmax = plotspecs["vminmax"][1]
-                        ax.pcolormesh(np.ma.array(Cnon, mask=Cnon == 0), cmap="Reds", vmin=vmin, vmax=vmax)
+                        # plot native and non-native contacts in different colors
+                        vmin, vmax = plotspecs["vminmax"]
+                        pa = ax.pcolormesh(np.ma.array(C, mask=(C == 0)), cmap="bwr_r", vmin=vmin, vmax=vmax)
 
                         ax.annotate("rep = " + str(rep + 1),
                             xy=(0,0), xytext=plotspecs["xytext"],
@@ -391,20 +388,19 @@ def plot_bvalue_maps_grid(dataset, plotspecs):
                 ax = axes[j / grid_dims[0], j % grid_dims[0]]
                 if len(dataset.ydata[t][n][j]) > 0:
                     vals = dataset.ydata[t][n][j][0]
-                    Cnat = np.zeros((N, N))
-                    Cnon = np.zeros((N, N))
+
+                    C = np.zeros((N, N))
                     for m in range(len(pairs)):
                         if m < dataset.prot_n_native[t][n]:
-                            Cnat[pairs[m, 1], pairs[m, 0]] = vals[m]
+                            C[pairs[m, 1], pairs[m, 0]] = vals[m]
                         else:
-                            Cnon[pairs[m, 1], pairs[m, 0]] = vals[m]
-                    
-                    # plot native and non-native contacts in different colors
-                    vmin, vmax = plotspecs["vminmax"][0]
-                    ax.pcolormesh(np.ma.array(Cnat, mask=Cnat == 0), cmap="Blues", vmin=vmin, vmax=vmax)
+                            C[pairs[m, 1], pairs[m, 0]] = -vals[m]
 
-                    vmin, vmax = plotspecs["vminmax"][1]
-                    ax.pcolormesh(np.ma.array(Cnon, mask=Cnon == 0), cmap="Reds", vmin=vmin, vmax=vmax)
+                    # plot native and non-native contacts in different colors
+                    vmin, vmax = plotspecs["vminmax"]
+                    pa = ax.pcolormesh(np.ma.array(C, mask=(C == 0)), cmap="bwr_r", vmin=vmin, vmax=vmax)
+
+                    ax.plot(np.arange(0, N + 1), np.arange(0, N + 1), 'k', lw=2)
 
                     ax.set_xlim(0, N)
                     ax.set_ylim(0, N)
@@ -423,6 +419,7 @@ def plot_bvalue_maps_grid(dataset, plotspecs):
             big_ax.set_ylabel(plotspecs["ylabel"])
             big_ax.set_xlabel(plotspecs["xlabel"])
             big_ax.set_title(plotspecs["title"] + " " + dataset.top_names[t][n])
+            #plt.colorbar(pa, big_ax, )
 
             if not (plotspecs["saveas"] is None):
                 if not os.path.exists("plots"):

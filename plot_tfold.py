@@ -61,7 +61,8 @@ if __name__ == "__main__":
     topologies = ["alpha", "beta", "mixed"]
     top_names = [["1r69", "1imq"], ["1fmk", "2akk"], ["1e0g"]]
     b_values = ["0.01", "0.10", "0.30", "0.50", "0.75", "0.83", "0.92",
-                "1.00", "1.04", "1.08", "1.12", "1.16", "1.20", "1.25"]
+                "1.00", "1.04", "1.08", "1.12", "1.16", "1.20", "1.25", 
+                "1.35", "1.45"]
     float_b = [ float(x) for x in b_values ]
 
     replicas = range(1, 11)
@@ -72,43 +73,43 @@ if __name__ == "__main__":
     datapath = coordname + "_folding_time/folding_mean"
 
     mfpt_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":"$t_{mfpt}$ (frames)", 
-            "title":"MFPT along Q", "legend_loc":6,
-            "saveas":"repavg_mfpt_1D", "saveas_formats":["png","pdf"]}
+            "title":"MFPT along Q", "legend_loc":2,
+            "saveas":"repavg_mfpt_1D"}
     mfpt_plotspecs.update(plotstyle)
 
     mfpt_ylog_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$\log\frac{t_{mfpt}}{t_{unit}}$",
             "title":"MFPT along Q", "legend_loc":6, "ylims":(5.5,10), 
-            "saveas":"repavg_mfpt_1D_ylog", "saveas_formats":["png","pdf"]}
+            "saveas":"repavg_mfpt_1D_ylog"}
     mfpt_ylog_plotspecs.update(plotstyle)
 
     mfpt_ylog_norm_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$\log\frac{t_{mfpt}}{t^{b=0}_{mfpt}}$", 
             "title":"MFPT along Q", "legend_loc":2,
-            "saveas":"repavg_mfpt_1D_ylog_norm", "saveas_formats":["png","pdf"]}
+            "saveas":"repavg_mfpt_1D_ylog_norm"}
     mfpt_ylog_norm_plotspecs.update(plotstyle)
 
     mfpt_norm_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$t_{mfpt}$ / $t_{mfpt}^{b=0}$", 
-            "title":"MFPT along Q", "legend_loc":6, "ylims":(0, 5),
-            "saveas":"repavg_mfpt_1D_norm", "saveas_formats":["png","pdf"]}
+            "title":"MFPT along Q", "legend_loc":6, "ylims":(0, 10),
+            "saveas":"repavg_mfpt_1D_norm"}
     mfpt_norm_plotspecs.update(plotstyle)
 
     dFstab_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$\Delta F^{\circ}$ $(k_B T)$", 
             "title":"Stability", "legend_loc":3,
-            "saveas":"repavg_dFstab_1D", "saveas_formats":["png","pdf"]}
+            "saveas":"repavg_dFstab_1D"}
     dFstab_plotspecs.update(plotstyle)
 
     dFdagg_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$\Delta F^{\dagger}$ $(k_B T)$", 
             "title":"Barrier height", "legend_loc":3, "ylims":(0,5),
-            "saveas":"repavg_dFdagg_1D", "saveas_formats":["png","pdf"]}
+            "saveas":"repavg_dFdagg_1D"}
     dFdagg_plotspecs.update(plotstyle)
 
     prefactor_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$t_0$ (frames)", 
             "title":"Folding prefactor","legend_loc":2, "ylims":(0, 900),
-            "saveas":"repavg_prefactor_1D", "saveas_formats":["png","pdf"]}
+            "saveas":"repavg_prefactor_1D"}
     prefactor_plotspecs.update(plotstyle)
 
     prefactor_norm_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$t_0$ / $t_0^{b=0}$", 
             "title":"Folding prefactor", "legend_loc":2, "ylims":(0, 5),
-            "saveas":"repavg_prefactor_1D_norm", "saveas_formats":["png","pdf"]}
+            "saveas":"repavg_prefactor_1D_norm"}
     prefactor_norm_plotspecs.update(plotstyle)
 
     # gather data
@@ -164,7 +165,7 @@ if __name__ == "__main__":
                 dF_b = dFdagg_raw_data.data[t][n][b]
                 for rep in range(len(mfpt_b)):
                     if (not np.isnan(mfpt_b[rep])) and (not np.isnan(dF_b[rep])):
-                        prefactor_data.data[t][n][b][rep] = mfpt_b[rep]/np.exp(dF_b[rep]))
+                        prefactor_data.data[t][n][b][rep] = mfpt_b[rep]/np.exp(dF_b[rep])
 
     prefactor_norm_data = project_util.Dataset(topologies, top_names, b_values, replicas, "", empty=True)
     for t in range(len(topologies)):
@@ -175,7 +176,7 @@ if __name__ == "__main__":
                 pre_b = prefactor_data.data[t][n][b]
                 for rep in range(len(pre_b)):
                     if not np.isnan(pre_b[rep]):
-                        prefactor_norm_data.data[t][n][b][rep] = pre_b/pre_unfrust
+                        prefactor_norm_data.data[t][n][b][rep] = pre_b[rep]/pre_unfrust
 
     dFstab_data = project_util.Dataset(topologies, top_names, b_values, replicas, "", empty=True)
     for t in range(len(topologies)):
@@ -207,4 +208,5 @@ if __name__ == "__main__":
     project_plotter.plot_data(dFdagg_data, dFdagg_plotspecs)
     project_plotter.plot_data(prefactor_data, prefactor_plotspecs)
     project_plotter.plot_data(prefactor_norm_data, prefactor_norm_plotspecs)
+    plt.show()
 

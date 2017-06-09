@@ -7,6 +7,32 @@ import scipy.optimize
 import project_util
 import project_plotter
 
+class Dataset(project_util.Dataset):
+    def __init__(self, *args, **kwargs):
+        self.unfolded_Q = None
+        self.barrier_Q = None
+        self.datapath_x = kwargs.pop("datapath_x")
+        project_util.Dataset.__init__(self, *args, **kwargs)
+
+    def get_replica_data(self):
+        if self.unfolded_Q is None:
+            # determine which Q bin to use
+            U = np.loadtxt("Qtanh_0_05_profile/minima.dat")[0]
+            self.unfolded_Q = U
+            #TS = np.loadtxt("Qtanh_0_05_profile/maxima.dat")[0]
+            #self.barrier_Q = TS
+        else:
+            U = self.unfolded_Q
+            #TS = self.barrier_Q
+
+        Q_mid_bin = np.load(self.datapath_x)
+        Q_bin_idx = np.argmin((Q_mid_bin - U)**2)
+
+        Rg_vs_Q = np.load(self.datapath)
+        data = Rg_vs_Q[Q_bin_idx]
+
+        return data
+
 if __name__ == "__main__":
     topologies = ["alpha", "beta", "mixed"]
     top_names = [["1r69", "1imq"], ["1fmk", "2akk"], ["1e0g"]]
@@ -40,6 +66,7 @@ if __name__ == "__main__":
     line = lambda x, a, b: a + b*x
     popt, pcov = scipy.optimize.curve_fit(line, np.log(N), np.log(avg_unfrust_Rg), p0=(-1,0.5))
     a, b = popt
+    print a, b
 
     idx = 0
     plt.figure()

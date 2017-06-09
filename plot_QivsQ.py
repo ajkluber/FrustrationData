@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from mpl_toolkits.axes_grid.inset_locator import inset_axes
 
 import project_util
 import project_plotter
@@ -17,8 +19,6 @@ class DatasetXvsY(project_util.DatasetXvsY):
         return data_x, data_y
 
 def subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, dataset):
-
-
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols*4.7, n_rows*3.5))
     for i in range(n_rows):
         for j in range(n_cols):
@@ -30,26 +30,47 @@ def subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, dataset):
             N = dataset.prot_sizes[t][n]
             #print dataset.top_names[t][n]
 
-            dataset.ydata[t][n][b]
+            #print dataset.ydata[t][n][b]
             ax = axes[i][j]
-
+            #import pdb; pdb.set_trace()
+            print t, n, b
             vals = dataset.ydata[t][n][b][0]
-            Cnat = np.zeros((N, N))
-            Cnon = np.zeros((N, N))
+            C = np.zeros((N, N))
             for m in range(len(pairs)):
                 if m < dataset.prot_n_native[t][n]:
-                    Cnat[pairs[m, 1], pairs[m, 0]] = vals[m]
+                    C[pairs[m, 1], pairs[m, 0]] = vals[m]
                 else:
-                    Cnon[pairs[m, 1], pairs[m, 0]] = vals[m]
+                    C[pairs[m, 1], pairs[m, 0]] = -vals[m]
             
             # plot native and non-native contacts in different colors
-            vmin, vmax = subplotspecs["vminmax"][0]
-            pa = ax.pcolormesh(np.ma.array(Cnat, mask=Cnat == 0), cmap="Blues", vmin=vmin, vmax=vmax)
-
-            vmin, vmax = subplotspecs["vminmax"][1]
-            pb = ax.pcolormesh(np.ma.array(Cnon, mask=Cnon == 0), cmap="Reds", vmin=vmin, vmax=vmax)
+            vmin, vmax = subplotspecs["vminmax"]
+            pa = ax.pcolormesh(np.ma.array(C, mask=(C == 0)), cmap="bwr_r", vmin=vmin, vmax=vmax)
 
             ax.plot(np.arange(0, N + 1), np.arange(0, N + 1), 'k', lw=2)
+
+            if subplotspecs.has_key("zoom"):
+                fact = subplotspecs["zoom_factor"]
+                ax_in = inset_axes(ax, "40%", "45%", loc=4)
+                x_idxs, y_idxs = subplotspecs["zoom"][i]
+                Cinset = C[y_idxs[0]:y_idxs[1] + 1, x_idxs[0]:x_idxs[1] + 1]
+                X, Y = np.meshgrid(np.arange(x_idxs[0], x_idxs[1] + 1), np.arange(y_idxs[0], y_idxs[1] + 1))
+                p_in = ax_in.pcolormesh(X, Y, fact*Cinset, cmap="bwr_r", vmin=vmin, vmax=vmax)
+                ax_in.set_xticks([])
+                ax_in.set_yticks([])
+                if subplotspecs.has_key("zoom_title"):
+                    ax_in.set_title(subplotspecs["zoom_title"], fontsize=16)
+
+                #cbar_in = plt.colorbar(p_in, ax_in, ticks=[])
+                #cbar_in.set_label("2x scale")
+
+
+                ax.add_patch(patches.Rectangle((x_idxs[0], y_idxs[0]), 
+                    y_idxs[1] - y_idxs[0], 
+                    x_idxs[1] - x_idxs[0], fill=False, lw=1.2, ec="k"))
+
+
+            ax.xaxis.set_ticks_position('bottom')
+            ax.yaxis.set_ticks_position('left')
             ax.set_xlim(0, N)
             ax.set_ylim(0, N)
 
@@ -76,18 +97,148 @@ def subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, dataset):
                     xy=(0,0), xytext=(0.4, 1.05), fontsize=20,
                     xycoords="axes fraction", textcoords="axes fraction")
 
-
     plt.subplots_adjust(wspace=0.075)
-    fig.subplots_adjust(left=0.05, right=0.8)
-    cbar_ax1 = fig.add_axes([0.82, 0.1, 0.02, 0.8])
-    cbar_ax2 = fig.add_axes([0.92, 0.1, 0.02, 0.8])
-    cba = fig.colorbar(pa, cax=cbar_ax1, ticks=subplotspecs["cbar1_ticks"])
-    cbb = fig.colorbar(pb, cax=cbar_ax2, ticks=subplotspecs["cbar2_ticks"])
-    cba.set_label("Native", fontsize=16)
-    cbb.set_label("Non-native", fontsize=16)
+    fig.subplots_adjust(left=0.05, right=0.9)
+    cbar_ax1 = fig.add_axes([0.91, 0.1, 0.01, 0.8])
+    cb = fig.colorbar(pa, cax=cbar_ax1, ticks=subplotspecs["cbar_ticks"])
+    cb.ax.set_yticklabels(subplotspecs["cbar_ticklabels"])
+    cbar_ax1.annotate("Native",
+                    xy=(0,0), xytext=(2, 0.1 + 0.7), fontsize=16,
+                    xycoords="axes fraction", textcoords="axes fraction",
+                    rotation="vertical")
+    cbar_ax1.annotate("Non-Native",
+                    xy=(0,0), xytext=(2, 0.1 + 0.25), fontsize=16,
+                    xycoords="axes fraction", textcoords="axes fraction",
+                    rotation="vertical")
+
     for format in [".png", ".pdf"]:
         fig.savefig("plots/" + subplotspecs["saveas"] + format)
         
+def plot_1r69_1fmk_maps(TSavg_data, TSstd_data, Uavg_data, Ustd_data):
+    # plot subplot of contact maps particular values
+    n_rows, n_cols = 2, 3
+
+    data_specs = {"topologies":[[0, 0, 0], [1, 1, 1]],
+            "top_names":[[0, 0, 0], [0, 0, 0]],
+            "b_values":[[3, 6, 10], [3, 6, 10]]}
+    subplotspecs = {"vminmax":(-1, 1),
+            "xytext":(0.7,0.05), "prot_labels":[r"$\alpha_1$", r"$\beta_1$"],
+            "panel_labels":["A", "B"],
+            "cbar_ticks":np.linspace(-1, 1, 3), 
+            "cbar_ticklabels":["1", "0", "1"],
+            "zoom":(((0,10), (28,38)), ((8,17), (43,52))),
+            "zoom_factor":2,
+            "zoom_title":"2x scale",
+            "saveas":"grid_TSavg_1r69_1fmk"}
+
+    subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, TSavg_data)
+
+    data_specs = {"topologies":[[0, 0, 0], [1, 1, 1]],
+            "top_names":[[0, 0, 0], [0, 0, 0]],
+            "b_values":[[3, 6, 10], [3, 6, 10]]}
+
+    subplotspecs = {"vminmax":(-.5, 0.5),
+            "xytext":(0.7,0.05), "prot_labels":[r"$\alpha_1$", r"$\beta_1$"],
+            "panel_labels":["A", "B"],
+            "cbar_ticks":np.linspace(-.5, 0.5, 3),
+            "cbar_ticklabels":["0.5", "0", "0.5"],
+            "zoom":(((0,10), (28,38)), ((8,17), (43,52))),
+            "zoom_factor":1,
+            "saveas":"grid_TSstd_1r69_1fmk"}
+
+    subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, TSstd_data)
+
+    data_specs = {"topologies":[[0, 0, 0], [1, 1, 1]],
+            "top_names":[[0, 0, 0], [0, 0, 0]],
+            "b_values":[[3, 6, 10], [3, 6, 10]]}
+    subplotspecs = {"vminmax":(-1, 1),
+            "xytext":(0.7,0.05), "prot_labels":[r"$\alpha_1$", r"$\beta_1$"],
+            "panel_labels":["A", "B"],
+            "cbar_ticks":np.linspace(-1, 1, 3),
+            "cbar_ticklabels":["1", "0", "1"],
+            "zoom":(((0,10), (28,38)), ((8,17), (43,52))),
+            "zoom_factor":2,
+            "zoom_title":"2x scale",
+            "saveas":"grid_Uavg_1r69_1fmk"}
+
+    subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, Uavg_data)
+
+    data_specs = {"topologies":[[0, 0, 0], [1, 1, 1]],
+            "top_names":[[0, 0, 0], [0, 0, 0]],
+            "b_values":[[3, 6, 10], [3, 6, 10]]}
+    subplotspecs = {"vminmax":(-.5, 0.5),
+            "xytext":(0.7,0.05), "prot_labels":[r"$\alpha_1$", r"$\beta_1$"],
+            "panel_labels":["A", "B"],
+            "cbar_ticks":np.linspace(-.5, 0.5, 3),
+            "cbar_ticklabels":["0.5", "0", "0.5"],
+            "zoom":(((0,10), (28,38)), ((8,17), (43,52))),
+            "zoom_factor":1,
+            "saveas":"grid_Ustd_1r69_1fmk"}
+
+    subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, Ustd_data)
+
+def plot_1im1_2akk_maps(TSavg_data, TSstd_data, Uavg_data, Ustd_data):
+    # plot subplot of contact maps particular values
+    n_rows, n_cols = 2, 3
+
+    data_specs = {"topologies":[[0, 0, 0], [1, 1, 1]],
+            "top_names":[[1, 1, 1], [1, 1, 1]],
+            "b_values":[[7, 12, 14], [7, 12, 14]]}
+    subplotspecs = {"vminmax":(-1, 1),
+            "xytext":(0.7,0.05), "prot_labels":[r"$\alpha_2$", r"$\beta_2$"],
+            "panel_labels":["A", "B"],
+            "cbar_ticks":np.linspace(-1, 1, 3), 
+            "cbar_ticklabels":["1", "0", "1"],
+            "zoom":(((5,21), (66,82)), ((0,13), (40,53))),
+            "zoom_factor":2,
+            "zoom_title":"2x scale",
+            "saveas":"grid_TSavg_1imq_2akk"}
+            #"zoom":(((38,48), (60,70)), ((8,17), (43,52))), # helix 3 and helix 4
+
+    subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, TSavg_data)
+
+    data_specs = {"topologies":[[0, 0, 0], [1, 1, 1]],
+            "top_names":[[1, 1, 1], [1, 1, 1]],
+            "b_values":[[7, 12, 14], [7, 12, 14]]}
+    subplotspecs = {"vminmax":(-.5, 0.5),
+            "xytext":(0.7,0.05), "prot_labels":[r"$\alpha_2$", r"$\beta_2$"],
+            "panel_labels":["A", "B"],
+            "cbar_ticks":np.linspace(-.5, 0.5, 3),
+            "cbar_ticklabels":["0.5", "0", "0.5"],
+            "zoom":(((5,21), (66,82)), ((0,13), (40,53))),
+            "zoom_factor":1,
+            "saveas":"grid_TSstd_1imq_2akk"}
+
+    subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, TSstd_data)
+
+    data_specs = {"topologies":[[0, 0, 0], [1, 1, 1]],
+            "top_names":[[1, 1, 1], [1, 1, 1]],
+            "b_values":[[7, 12, 14], [7, 12, 14]]}
+    subplotspecs = {"vminmax":(-1, 1),
+            "xytext":(0.7,0.05), "prot_labels":[r"$\alpha_2$", r"$\beta_2$"],
+            "panel_labels":["A", "B"],
+            "cbar_ticks":np.linspace(-1, 1, 3),
+            "cbar_ticklabels":["1", "0", "1"],
+            "zoom":(((5,21), (66,82)), ((0,13), (40,53))),
+            "zoom_factor":2,
+            "zoom_title":"2x scale",
+            "saveas":"grid_Uavg_1imq_2akk"}
+
+    subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, Uavg_data)
+
+    data_specs = {"topologies":[[0, 0, 0], [1, 1, 1]],
+            "top_names":[[1, 1, 1], [1, 1, 1]],
+            "b_values":[[7, 12, 14], [7, 12, 14]]}
+    subplotspecs = {"vminmax":(-.5, 0.5),
+            "xytext":(0.7,0.05), "prot_labels":[r"$\alpha_2$", r"$\beta_2$"],
+            "panel_labels":["A", "B"],
+            "cbar_ticks":np.linspace(-.5, 0.5, 3),
+            "cbar_ticklabels":["0.5", "0", "0.5"],
+            "zoom":(((5,21), (66,82)), ((0,13), (40,53))),
+            "zoom_factor":1,
+            "saveas":"grid_Ustd_1imq_2akk"}
+
+    subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, Ustd_data)
 
 if __name__ == "__main__":
     topologies = ["alpha","beta", "mixed"]
@@ -96,12 +247,13 @@ if __name__ == "__main__":
     prot_n_native = [[155, 219], [164, 213], [117]]
 
     b_values = ["0.01", "0.10", "0.30", "0.50", "0.75", "0.83", "0.92",
-                "1.00", "1.04", "1.08", "1.12", "1.16", "1.20", "1.25"]
+                "1.00", "1.04", "1.08", "1.12", "1.16", "1.20", "1.25", 
+                "1.35", "1.45"]
 
     float_b = [ float(x) for x in b_values ]
     coloridxs = [ b/1.3 for b in float_b ]
 
-    #plotstyle = project_plotter.global_plot_style()
+    plotstyle = project_plotter.global_plot_style()
 
     replicas = range(1,11)
 
@@ -126,27 +278,32 @@ if __name__ == "__main__":
     TScont_plotspecs = {"xlabel":"index", "ylabel":"index", 
             "title":"TS structure", "saveas":"q_TS_replicas",
             "grid_dims":grid_dims, "coloridxs":coloridxs,
-            "xytext":(0.6,0.12), "cmap":"Blues", "vminmax":((0, 1), (0, 0.25))}
+            "xytext":(0.6,0.12), "cmap":"Blues", "vminmax":((0, 1), (0, 1))}
+    TScont_plotspecs.update(plotstyle)
 
     TSavg_plotspecs = {"xlabel":"index", "ylabel":"index", 
             "title":"Avg TS", "saveas":"repavg_TScont_{}",
             "grid_dims":grid_dims, "coloridxs":coloridxs,
-            "xytext":(0.6,0.12), "cmap":"Blues", "vminmax":((0, 1), (0, 0.25))}
+            "xytext":(0.6,0.12), "cmap":"Blues", "vminmax":(-1, 1)}
+    TSavg_plotspecs.update(plotstyle)
 
     TSstd_plotspecs = {"xlabel":"index", "ylabel":"index", 
             "title":"Std dev TS", "saveas":"repstd_TScont_{}",
             "grid_dims":grid_dims, "coloridxs":coloridxs,
-            "xytext":(0.6,0.12), "cmap":"Blues", "vminmax":((0, 0.5), (0, 0.5))}
+            "xytext":(0.6,0.12), "cmap":"Blues", "vminmax":(0, 0.5)}
+    TSstd_plotspecs.update(plotstyle)
 
     Uavg_plotspecs = {"xlabel":"index", "ylabel":"index", 
             "title":"Avg U", "saveas":"repavg_Ucont_{}",
             "grid_dims":grid_dims, "coloridxs":coloridxs,
-            "xytext":(0.6,0.12), "cmap":"Blues", "vminmax":((0, 1), (0, 0.25))}
+            "xytext":(0.6,0.12), "cmap":"Blues", "vminmax":(-1, 1)}
+    Uavg_plotspecs.update(plotstyle)
 
     Ustd_plotspecs = {"xlabel":"index", "ylabel":"index", 
             "title":"Std dev U", "saveas":"repstd_Ucont_{}",
             "grid_dims":grid_dims, "coloridxs":coloridxs,
-            "xytext":(0.6,0.12), "cmap":"Blues", "vminmax":((0, 0.5), (0, 0.5))}
+            "xytext":(0.6,0.12), "cmap":"Blues", "vminmax":(0, 0.5)}
+    Ustd_plotspecs.update(plotstyle)
 
     Qi_raw_data = DatasetXvsY(topologies, top_names, b_values, replicas, datapath_x,
                 datapath_y, calc_repavg=False)
@@ -160,8 +317,8 @@ if __name__ == "__main__":
     for t in range(len(topologies)):
         top_pairs = []
         for n in range(len(top_names[t])):
-            print top_names[t][n]
-            print "b-value " + "".join([ "{:8}".format(x) for x in replicas ])
+            #print top_names[t][n]
+            #print "b-value " + "".join([ "{:8}".format(x) for x in replicas ])
             for b in range(len(b_values)):
                 repstring = "{:8}".format(b_values[b]) 
                 if b == 0:
@@ -183,7 +340,7 @@ if __name__ == "__main__":
                     qi_TS = Qi_raw_data.ydata[t][n][b][rep][qTS_idx]
                     Ai_TS = Ai_raw_data.ydata[t][n][b][rep][aTS_idx]
                     TScont_data.ydata[t][n][b].append(np.concatenate((qi_TS, Ai_TS)))
-                print repstring
+                #print repstring
         all_pairs.append(top_pairs)
     TScont_data.pairs = all_pairs
     TScont_data.prot_sizes = prot_sizes
@@ -270,68 +427,19 @@ if __name__ == "__main__":
     Ustd_data.prot_sizes = prot_sizes
     Ustd_data.prot_n_native = prot_n_native
 
-    # plot subplot of contact maps particular values
-    n_rows, n_cols = 2, 3
-
-    data_specs = {"topologies":[[0, 0, 0], [1, 1, 1]],
-            "top_names":[[0, 0, 0], [0, 0, 0]],
-            "b_values":[[3, 6, 10], [3, 6, 10]]}
-    subplotspecs = {"vminmax":((0, 1), (0, 0.25)),
-            "xytext":(0.7,0.05), "prot_labels":[r"$\alpha_1$", r"$\beta_1$"],
-            "panel_labels":["A", "B"],
-            "cbar1_ticks":np.arange(0, 1.2, 0.2),
-            "cbar2_ticks":np.arange(0, 0.25 + 0.05, 0.05),
-            "saveas":"grid_TSavg_1r69_1fmk"}
-
-    subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, TSavg_data)
-
-    data_specs = {"topologies":[[0, 0, 0], [1, 1, 1]],
-            "top_names":[[0, 0, 0], [0, 0, 0]],
-            "b_values":[[3, 6, 10], [3, 6, 10]]}
-
-    subplotspecs = {"vminmax":((0, 0.5), (0, 0.5)),
-            "xytext":(0.7,0.05), "prot_labels":[r"$\alpha_1$", r"$\beta_1$"],
-            "panel_labels":["A", "B"],
-            "cbar1_ticks":np.arange(0, 0.6, 0.1),
-            "cbar2_ticks":np.arange(0, 0.6, 0.1),
-            "saveas":"grid_TSstd_1r69_1fmk"}
-
-    subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, TSstd_data)
-
-    data_specs = {"topologies":[[0, 0, 0], [1, 1, 1]],
-            "top_names":[[0, 0, 0], [0, 0, 0]],
-            "b_values":[[3, 6, 10], [3, 6, 10]]}
-    subplotspecs = {"vminmax":((0, 1), (0, 0.25)),
-            "xytext":(0.7,0.05), "prot_labels":[r"$\alpha_1$", r"$\beta_1$"],
-            "panel_labels":["A", "B"],
-            "cbar1_ticks":np.arange(0, 1.2, 0.2),
-            "cbar2_ticks":np.arange(0, 0.25 + 0.05, 0.05),
-            "saveas":"grid_Uavg_1r69_1fmk"}
-
-    subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, Uavg_data)
-
-    data_specs = {"topologies":[[0, 0, 0], [1, 1, 1]],
-            "top_names":[[0, 0, 0], [0, 0, 0]],
-            "b_values":[[3, 6, 10], [3, 6, 10]]}
-    subplotspecs = {"vminmax":((0, 1), (0, 0.25)),
-            "xytext":(0.7,0.05), "prot_labels":[r"$\alpha_1$", r"$\beta_1$"],
-            "panel_labels":["A", "B"],
-            "cbar1_ticks":np.arange(0, 1.2, 0.2),
-            "cbar2_ticks":np.arange(0, 0.25 + 0.05, 0.05),
-            "saveas":"grid_Ustd_1r69_1fmk"}
-
-    subplot_contact_maps(n_rows, n_cols, data_specs, subplotspecs, Ustd_data)
-    plt.show()
+    # plot fancy figures for paper
+    #plot_1im1_2akk_maps(TSavg_data, TSstd_data, Uavg_data, Ustd_data)
+    #plot_1r69_1fmk_maps(TSavg_data, TSstd_data, Uavg_data, Ustd_data)
 
     # calculate route measure
 
     #project_plotter.plot_bvalue_maps_grid(TScont_data, Q_TS_plotspecs)
 
-    #plot_replica_maps_grid(TScont_data, TScont_plotspecs) # plot contact maps for all replicas
+    project_plotter.plot_replica_maps_grid(TScont_data, TScont_plotspecs) # plot contact maps for all replicas
 
-    #plot_bvalue_maps_grid(TSavg_data, TSavg_plotspecs) # plot avg contact map
-    #plot_bvalue_maps_grid(TSavg_data, TSavg_plotspecs) # plot avg contact map
-    #plot_bvalue_maps_grid(Uavg_data, Uavg_plotspecs) # plot avg contact map
-    #plot_bvalue_maps_grid(Ustd_data, Ustd_plotspecs) # plot std contact map
+    #project_plotter.plot_bvalue_maps_grid(TSavg_data, TSavg_plotspecs) # plot avg contact map
+    #project_plotter.plot_bvalue_maps_grid(TSstd_data, TSstd_plotspecs) # plot avg contact map
+    #project_plotter.plot_bvalue_maps_grid(Uavg_data, Uavg_plotspecs) # plot avg contact map
+    #project_plotter.plot_bvalue_maps_grid(Ustd_data, Ustd_plotspecs) # plot std contact map
     #plt.show()
 

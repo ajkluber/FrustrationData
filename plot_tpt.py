@@ -12,7 +12,8 @@ if __name__ == "__main__":
     topologies = ["alpha", "beta", "mixed"]
     top_names = [["1r69", "1imq"], ["1fmk", "2akk"], ["1e0g"]]
     b_values = ["0.01", "0.10", "0.30", "0.50", "0.75", "0.83", "0.92",
-                "1.00", "1.04", "1.08", "1.12", "1.16", "1.20", "1.25", "1.35", "1.45"]
+                "1.00", "1.04", "1.08", "1.12", "1.16", "1.20", "1.25", 
+                "1.35", "1.45"]
     float_b = [ float(x) for x in b_values ]
 
     replicas = range(1, 11)
@@ -20,7 +21,7 @@ if __name__ == "__main__":
     plotstyle = project_plotter.global_plot_style()
 
     tp_plotspecs = {"xlabel":"Frustration ($b$)", "ylabel":r"$t_{tp}$ (frames)", 
-            "legend_loc":2, "ylims":(0,420),
+            "legend_loc":2, "ylims":(0,600),
             "saveas":"repavg_tp_1D"}
     tp_plotspecs.update(plotstyle)
 

@@ -183,27 +183,30 @@ class DatasetXvsY(object):
                     data_x_rep = []
                     data_y_rep = []
                     for rep in self.replicas:
-                        os.chdir("b_{}/replica_{}".format(b, rep))
-                        cwd = os.getcwd()
-                        if cwd in self.skip: 
+                        if os.path.exists("b_{}/replica_{}".format(b, rep)):
+                            os.chdir("b_{}/replica_{}".format(b, rep))
+                            cwd = os.getcwd()
+                            if cwd in self.skip: 
+                                os.chdir("../..")
+                                continue
+                            T_used = get_T_used()
+                            if self.T_used and T_used:
+                                dir = os.path.dirname(self.datapath_x)
+                                with open(dir + "/T_used.dat", "r") as fin:
+                                    T_used = float(fin.read())
+                                if os.path.exists(self.datapath_x.format(T_used)) and os.path.exists(self.datapath_y.format(T_used)) and not self.empty:
+                                    data_x, data_y = self.get_replica_data()
+                                    data_x_rep.append(data_x)
+                                    data_y_rep.append(data_y)
+                            else:
+                                if os.path.exists(self.datapath_x) and os.path.exists(self.datapath_y) and not self.empty:
+                                    data_x, data_y = self.get_replica_data()
+                                    data_x_rep.append(data_x)
+                                    data_y_rep.append(data_y)
                             os.chdir("../..")
-                            continue
-                        T_used = get_T_used()
-                        if self.T_used and T_used:
-                            dir = os.path.dirname(self.datapath_x)
-                            with open(dir + "/T_used.dat", "r") as fin:
-                                T_used = float(fin.read())
-                            if os.path.exists(self.datapath_x.format(T_used)) and os.path.exists(self.datapath_y.format(T_used)) and not self.empty:
-                                data_x, data_y = self.get_replica_data()
-                                data_x_rep.append(data_x)
-                                data_y_rep.append(data_y)
                         else:
-                            if os.path.exists(self.datapath_x) and os.path.exists(self.datapath_y) and not self.empty:
-                                data_x, data_y = self.get_replica_data()
-                                data_x_rep.append(data_x)
-                                data_y_rep.append(data_y)
+                            pass
 
-                        os.chdir("../..")
                         if b == "0.00":
                             # if unfrustrated go-model only run one replica.
                             break
@@ -248,20 +251,21 @@ class DatasetXvsY(object):
 
         # calculate disordered-averaged profile
         data_x_name_avg, data_y_name_avg = [], [] 
-        if len(rep_xdata) > 0:
-            
+        good = np.array([ np.all(~np.isnan(rep_ydata[r])) for r in range(len(rep_ydata)) ])
+        if (len(rep_xdata) > 0) and (np.sum(good) > 0):
+            # only average over replicas
             if hasattr(rep_ydata[0], "mask"):
                 # determine a shared domain of data
-                xmin = np.max([ np.min(rep_xdata[r][~ rep_ydata[r].mask]) for r in range(len(rep_xdata)) ])
-                xmax = np.min([ np.max(rep_xdata[r][~ rep_ydata[r].mask]) for r in range(len(rep_xdata)) ])
+                xmin = np.max([ np.min(rep_xdata[r][~ rep_ydata[r].mask]) for r in range(len(rep_xdata)) if good[r]])
+                xmax = np.min([ np.max(rep_xdata[r][~ rep_ydata[r].mask]) for r in range(len(rep_xdata)) if good[r]])
                 xinterp = np.linspace(xmin, xmax, 500)
                 # only interpolate with non-masked values
-                yinterp = np.array([ interp1d(rep_xdata[r][~ rep_ydata[r].mask], rep_ydata[r][~ rep_ydata[r].mask], kind="cubic")(xinterp) for r in range(len(rep_xdata)) ])
+                yinterp = np.array([ interp1d(rep_xdata[r][~ rep_ydata[r].mask], rep_ydata[r][~ rep_ydata[r].mask], kind="cubic")(xinterp) for r in range(len(rep_xdata)) if good[r]])
             else:
-                xmin = np.max([ np.min(rep_xdata[r]) for r in range(len(rep_xdata)) ])
-                xmax = np.min([ np.max(rep_xdata[r]) for r in range(len(rep_xdata)) ])
+                xmin = np.max([ np.min(rep_xdata[r]) for r in range(len(rep_xdata)) if good[r]])
+                xmax = np.min([ np.max(rep_xdata[r]) for r in range(len(rep_xdata)) if good[r]])
                 xinterp = np.linspace(xmin, xmax, 500)
-                yinterp = np.array([ interp1d(rep_xdata[r], rep_ydata[r], kind="cubic")(xinterp) for r in range(len(rep_xdata)) ])
+                yinterp = np.array([ interp1d(rep_xdata[r], rep_ydata[r], kind="cubic")(xinterp) for r in range(len(rep_xdata)) if good[r]])
             data_x_name_avg = xinterp
             data_y_name_avg = np.mean(yinterp, axis=0) 
         return data_x_name_avg, data_y_name_avg

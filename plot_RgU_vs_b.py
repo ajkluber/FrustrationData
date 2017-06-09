@@ -106,8 +106,13 @@ if __name__ == "__main__":
 
     Rgmin_over_Rg_plotspecs = {"xlabel":"Frustration ($b$)", 
             "ylabel":r"$\frac{R_g^{min}}{R_g}$", "ylims":(0.3, 1), 
-            "title":" ", "legend_loc":4, "saveas":"Rgmin_over_Rg_vs_b"}
+            "legend_loc":4, "saveas":"Rgmin_over_Rg_vs_b"}
     Rgmin_over_Rg_plotspecs.update(plotstyle)
+
+    eta_pack_plotspecs = {"xlabel":"Frustration ($b$)", 
+            "ylabel":r"$\eta$", "ylims":(0, 1), 
+            "legend_loc":2, "saveas":"eta_pack_vs_b"}
+    eta_pack_plotspecs.update(plotstyle)
 
     Rg_norm_data = project_util.Dataset(topologies, top_names, b_values, replicas,"", empty=True)
     for t in range(len(topologies)):
@@ -120,7 +125,11 @@ if __name__ == "__main__":
                     if not np.isnan(Rg_b[rep]):
                         Rg_norm_data.data[t][n][b][rep] = Rg_b[rep]/avg_Rg_0
 
-    Rg_min = lambda N: np.sqrt(3./5)*(0.35*((1. - 0.3)*N - 1)**(1./3)) # volume of solid sphere of N monomers.
+    Rg_min = lambda N: np.sqrt(3./5)*(0.35*((1. - 0.3)*N - 1)**(1./3)) # Rg of solid sphere of N monomers.
+
+    coeff1, coeff2 = -4.26638807901, 1.10395088206
+    Rg_coil = lambda N: np.exp(coeff1)*(N**coeff2) # Rg of coil 
+
 
     Rgmin_over_Rg = project_util.Dataset(topologies, top_names, b_values, replicas,"", empty=True)
     for t in range(len(topologies)):
@@ -132,6 +141,37 @@ if __name__ == "__main__":
                     if not np.isnan(Rg_b[rep]):
                         Rgmin_over_Rg.data[t][n][b][rep] = Rgmin/Rg_b[rep]
     Rgmin_over_Rg._calc_repavg()
+
+    eta_pack = project_util.Dataset(topologies, top_names, b_values, replicas,"", empty=True)
+    for t in range(len(topologies)):
+        for n in range(len(top_names[t])):
+            Rgmin = Rg_min(float(prot_sizes[t][n]))
+            #Rgcoil = Rg_coil(float(prot_sizes[t][n]))
+            Rgcoil = np.max(Rg_data.data[t][n][0])
+            for b in range(len(b_values)):
+                Rg_b = Rg_data.data[t][n][b]
+                for rep in range(len(Rg_b)):
+                    if not np.isnan(Rg_b[rep]):
+                        eta_pack.data[t][n][b][rep] = (Rgcoil - Rg_b[rep])/(Rgcoil - Rgmin)
+    eta_pack._calc_repavg()
+
+    # correct error bars on packing fraction
+    for t in range(len(topologies)):
+        for n in range(len(top_names[t])):
+            Rgmin = Rg_min(float(prot_sizes[t][n]))
+            temp_std = []
+            for b in range(len(b_values)):
+                Rg_b = Rg_data.data[t][n][b]
+                good = ~np.isnan(Rg_b)
+                if np.sum(good) > 1:
+                    Rg_avg = np.mean(Rg_b[good])
+                    Rg_SE = np.std(Rg_b[good])/np.sqrt(len(Rg_b[good]))
+                    Rg_percent_error = Rg_SE/Rg_avg
+                    new_error = Rg_percent_error*eta_pack.avgdata[t][n][b]
+                    temp_std.append(new_error)
+                else:
+                    temp_std.append(np.nan)
+            eta_pack.stddata[t][n] = np.array(temp_std)
 
     # correct error bars on the reciprocal
     for t in range(len(topologies)):
@@ -153,7 +193,8 @@ if __name__ == "__main__":
 
     #project_plotter.plot_data(Rg_data, Rg_plotspecs)
     #project_plotter.plot_data(Rg_norm_data, Rg_norm_plotspecs)
-    project_plotter.plot_data(Rgmin_over_Rg, Rgmin_over_Rg_plotspecs)
+    #project_plotter.plot_data(Rgmin_over_Rg, Rgmin_over_Rg_plotspecs)
+    project_plotter.plot_data(eta_pack, eta_pack_plotspecs)
     plt.show()
 
     project_util.save_avg_plot_data(Rg_data, "Rg_raw")
