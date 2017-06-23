@@ -247,7 +247,10 @@ def plot_data(dataset, plotspecs, err_mult=1.):
 
     #plt.text(-0.26, 0.68, plotspecs["ylabel"], fontsize=28) # use for y-label of Rg_packing plot
     #plt.text(-0.26, 0.53, plotspecs["ylabel"], fontsize=30) # use for y-label of packing plot
-    plt.ylabel(plotspecs["ylabel"])
+    if plotspecs.has_key("ylabel_rot"):
+        plt.ylabel(plotspecs["ylabel"], rotation=plotspecs["ylabel_rot"])
+    else:
+        plt.ylabel(plotspecs["ylabel"])
     plt.xlabel(plotspecs["xlabel"])
     if plotspecs.has_key("title"):
         plt.title(plotspecs["title"])
