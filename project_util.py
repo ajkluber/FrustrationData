@@ -1,4 +1,5 @@
 import os
+import glob
 import pickle
 import numpy as np
 
@@ -182,34 +183,34 @@ class DatasetXvsY(object):
                         print "getting b-value: ", b
                     data_x_rep = []
                     data_y_rep = []
-                    for rep in self.replicas:
-                        if os.path.exists("b_{}/replica_{}".format(b, rep)):
-                            os.chdir("b_{}/replica_{}".format(b, rep))
-                            cwd = os.getcwd()
-                            if cwd in self.skip: 
+                    if not self.empty:
+                        for rep in self.replicas:
+                            if os.path.exists("b_{}/replica_{}".format(b, rep)):
+                                os.chdir("b_{}/replica_{}".format(b, rep))
+                                cwd = os.getcwd()
+                                if cwd in self.skip: 
+                                    os.chdir("../..")
+                                    continue
+                                T_used = get_T_used()
+                                if self.T_used and T_used:
+                                    with open("Qtanh_0_05_profile/T_used.dat", "r") as fin:
+                                        T_used = float(fin.read())
+                                    if os.path.exists(self.datapath_x.format(T_used)) and \
+                                            os.path.exists(self.datapath_y.format(T_used)):
+                                        data_x, data_y = self.get_replica_data()
+                                        data_x_rep.append(data_x)
+                                        data_y_rep.append(data_y)
+                                else:
+                                    if os.path.exists(self.datapath_x) and \
+                                            os.path.exists(self.datapath_y):
+                                        data_x, data_y = self.get_replica_data()
+                                        data_x_rep.append(data_x)
+                                        data_y_rep.append(data_y)
                                 os.chdir("../..")
-                                continue
-                            T_used = get_T_used()
-                            if self.T_used and T_used:
-                                dir = os.path.dirname(self.datapath_x)
-                                with open(dir + "/T_used.dat", "r") as fin:
-                                    T_used = float(fin.read())
-                                if os.path.exists(self.datapath_x.format(T_used)) and os.path.exists(self.datapath_y.format(T_used)) and not self.empty:
-                                    data_x, data_y = self.get_replica_data()
-                                    data_x_rep.append(data_x)
-                                    data_y_rep.append(data_y)
-                            else:
-                                if os.path.exists(self.datapath_x) and os.path.exists(self.datapath_y) and not self.empty:
-                                    data_x, data_y = self.get_replica_data()
-                                    data_x_rep.append(data_x)
-                                    data_y_rep.append(data_y)
-                            os.chdir("../..")
-                        else:
-                            pass
 
-                        if b == "0.00":
-                            # if unfrustrated go-model only run one replica.
-                            break
+                            if b == "0.00":
+                                # if unfrustrated go-model only run one replica.
+                                break
                     data_x_name.append(data_x_rep)
                     data_y_name.append(data_y_rep)
                 os.chdir("..")
@@ -326,11 +327,44 @@ def get_T_used():
 
     return T_used
 
-def engIS_exist():
+def ISdir_exist():
     T = get_T_used()
-    eng_files_exist = np.all(np.array([ os.path.exists(
-        'T_{:.2f}_{}/inherent_structures/Enat.npy'.format(T, x)) for x in [1,2,3] ]))
-    return eng_files_exist
+    exist = np.all(np.array([ os.path.exists(
+        'T_{:.2f}_{}/inherent_structures'.format(T, x)) for x in [1,2,3] ]))
+    return exist
+
+def engIScat_exist():
+    T = get_T_used()
+    cwd = os.getcwd()
+    exist = []
+    for j in range(1,4):
+        os.chdir("T_{:.2f}_{}/inherent_structures".format(T, j))
+        exist.append(os.path.exists('Ebackbone.npy'))
+        exist.append(os.path.exists('Enat.npy'))
+        exist.append(os.path.exists('Enon.npy'))
+        exist.append(os.path.exists('Ebackbone_thm.npy'))
+        exist.append(os.path.exists('Enat_thm.npy'))
+        exist.append(os.path.exists('Enon_thm.npy'))
+        os.chdir(cwd)
+
+    return np.all(exist) 
+
+def engISrank_exist():
+    T = get_T_used()
+    cwd = os.getcwd()
+    exist = []
+    for j in range(1,4):
+        os.chdir("T_{:.2f}_{}/inherent_structures".format(T, j))
+        size = len(glob.glob("rank_*"))
+        exist.append(np.all([ os.path.exists("rank_{}/Ebackbone.npy".format(x)) for x in range(size)]))
+        exist.append(np.all([ os.path.exists("rank_{}/Enat.npy".format(x)) for x in range(size)]))
+        exist.append(np.all([ os.path.exists("rank_{}/Enon.npy".format(x)) for x in range(size)]))
+        exist.append(np.all([ os.path.exists("rank_{}/Ebackbone_thm.npy".format(x)) for x in range(size)]))
+        exist.append(np.all([ os.path.exists("rank_{}/Enat_thm.npy".format(x)) for x in range(size)]))
+        exist.append(np.all([ os.path.exists("rank_{}/Enon_thm.npy".format(x)) for x in range(size)]))
+        os.chdir(cwd)
+
+    return np.all(exist) 
 
 def qtanh_exist():
     T = get_T_used()
@@ -338,11 +372,23 @@ def qtanh_exist():
         'T_{:.2f}_{}/Qtanh_0_05.npy'.format(T, x)) for x in [1,2,3] ]))
     return qtanh_files_exist
 
-def trajIS_exist():
+def trajIScat_exist():
     T = get_T_used()
-    traj_files_exist = np.all(np.array([ os.path.exists(
-        'T_{:.2f}_{}/inherent_structures/traj.xtc'.format(T, x)) for x in [1,2,3] ]))
-    return traj_files_exist
+    cwd = os.getcwd()
+    exist = np.all([ os.path.exists("T_{:.2f}_{}/inherent_structures/traj.xtc".format(T, j)) for j in [1, 2, 3]])
+    return exist
+
+def trajISrank_exist():
+    T = get_T_used()
+    cwd = os.getcwd()
+    exist = []
+    for j in range(1,4):
+        os.chdir("T_{:.2f}_{}/inherent_structures".format(T, j))
+        size = len(glob.glob("rank_*"))
+        exist.append(np.all([ os.path.exists("rank_{}/all_frames.xtc".format(x)) for x in range(size)]))
+        os.chdir(cwd)
+
+    return np.all(exist) 
 
 def trajTf_exist():
     T = get_T_used()
